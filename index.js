@@ -72,11 +72,21 @@ const addNewKeyword = (label, keyword) => {
 };
 
 // We reload the articles depends of the currentKeywords
-// TODO: Modify this function to display only articles that contain at least one of the selected keywords.
+// DONE: Modify this function to display only articles that contain at least one of the selected keywords.
 const reloadArticles = () => {
     document.querySelector('.articlesList').innerHTML = '';
-    
-    const articlesToShow = data.articles;
+
+    const articlesToShow = data.articles.filter(article => {
+      let result = false;
+      article.tags.forEach(tag => {
+        if(currentKeywords.includes(tag)) {
+          result = true;
+          return;
+        };
+      });
+      return result;
+    });
+    console.log(articlesToShow.length);
     articlesToShow.forEach((article) => {
         document.querySelector('.articlesList').innerHTML += `
             <article>
@@ -106,30 +116,50 @@ const resetInput = () => {
 };
 
 // Clean a keyword to lowercase and without special characters
-// TODO: Make the cleaning
+// DONE: Make the cleaning
 const cleanedKeyword = (keyword) => {
-    const cleanedKeyword = keyword;
-
-    return cleanedKeyword;
+    let result = keyword;
+    result = result.toLowerCase().trim();
+    result = result.replace(/[éèêë]/, 'e')
+                    .replace(/[ûüù]/, 'u')
+                    .replace(/[àâä]/, 'a')
+                    .replace(/[ïî]/, 'i')
+                    .replace(/[öô]/, 'o');
+    return result;
 };
 
-// TODO: Modify this function to show the keyword containing a part of the word inserted
+// DONE: Modify this function to show the keyword containing a part of the word inserted
 // into the form (starting autocompletion at 3 letters).
-// TODO: We also show all the words from the same category than this word.
-// TODO: We show in first the keyword containing a part of the word inserted.
+// DONE: We also show all the words from the same category than this word.
+// DONE: We show in first the keyword containing a part of the word inserted.
 // TODO: If a keyword is already in the list of presents hashtags (checkbox list), we don't show it.
 const showKeywordsList = (value) => {
     // Starting at 3 letters inserted in the form, we do something
     if (value.length >= 3) {
         const keyWordUl = document.querySelector(".inputKeywordsHandle ul");
         resetKeywordsUl();
-        
-        // This will allow you to add a new element in the list under the text input
-        // On click, we add the keyword, like so:
-        // keyWordUl.innerHTML += `
-        //    <li onclick="addNewKeyword(`${keyword}`, `${cleanedKeyword(keyword)}`)">${keyword}</li>
-        // `;
-    }
+        let listedKeywords = [];
+        let listedKeywordsByCategories = [];
+        keywordsCategories.forEach(object => {
+          let matchingKeywords = object.keywords.filter(keyword => cleanedKeyword(keyword).includes(cleanedKeyword(value)));
+          if(matchingKeywords.length > 0) {
+            listedKeywords.push(matchingKeywords);
+            listedKeywordsByCategories.push(object.keywords);
+          };
+        });
+
+        listedKeywords = [...listedKeywords.flat(), ...listedKeywordsByCategories.flat()];
+        let result = [];
+        listedKeywords.forEach(keyword => {
+          if(!result.includes(keyword) && !currentKeywords.includes(keyword)) {
+            result.push(keyword);
+          }
+        })
+
+        result.forEach(keyword => {
+          keyWordUl.innerHTML += `<li onclick="addNewKeyword(\`${keyword}\`, \`${cleanedKeyword(keyword)}\`)">${keyword}</li>`;
+        });
+    };
 };
 
 // Once the DOM (you will se what is it next week) is loaded, we get back our form and
